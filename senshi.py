@@ -177,23 +177,35 @@ def get_manga_info(slug):
     try:
         browser = get_browser()
         page = browser.new_page()
-        page.goto(url, wait_until='networkidle')
-        page.wait_for_timeout(2000)
+        page.goto(url, wait_until='domcontentloaded') # domcontentloaded is enough for astro-islands
+        page.wait_for_timeout(3000)
         
         # Extract manga title
         title_elem = page.query_selector('h1')
         manga_title = title_elem.inner_text().strip() if title_elem else slug.replace('-', ' ').title()
         
-        # Extract chapters by finding all chapter links
-        chapter_links = page.query_selector_all(f'a[href*="/manga/{slug}/chapters/"]')
         chapters = set()
         
-        for link in chapter_links:
-            href = link.get_attribute('href')
-            if href:
-                match = re.search(r'/chapters/(\d+(?:\.\d+)?)', href)
-                if match:
-                    chapters.add(float(match.group(1)))
+        # Method 1: Try extracting from Astro Island props (Most reliable)
+        island = page.query_selector('astro-island[component-export="MangaView"]')
+        if island:
+            props = island.get_attribute('props')
+            if props:
+                # Regex to find chapter numbers in the props JSON structure
+                # Pattern appears to be "number":[0,123] or similar
+                matches = re.findall(r'"number":\[\d+,(\d+(?:\.\d+)?)\]', props)
+                for m in matches:
+                    chapters.add(float(m))
+                    
+        # Method 2: Fallback to link extraction if Method 1 fails
+        if not chapters:
+            chapter_links = page.query_selector_all(f'a[href*="/manga/{slug}/chapters/"]')
+            for link in chapter_links:
+                href = link.get_attribute('href')
+                if href:
+                    match = re.search(r'/chapters/(\d+(?:\.\d+)?)', href)
+                    if match:
+                        chapters.add(float(match.group(1)))
         
         page.close()
         
