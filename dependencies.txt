@@ -1,7 +1,8 @@
+setuptools
 requests
 cloudscraper
 bs4
 colorama
 img2pdf
-KindleComicConverter
+kindlecomicconverter @ git+https://github.com/ciromattia/kcc.git
 Wand
