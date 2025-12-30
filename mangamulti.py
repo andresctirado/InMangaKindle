@@ -426,14 +426,24 @@ if __name__ == "__main__":
     if args.chapters:
         chapters_str = ' '.join(args.chapters)
         
+        # Get the last known chapter (from visible list)
+        last_chapter = max(all_chapters) if all_chapters else 300
+        
+        def parse_chapter_num(ch_str):
+            """Parse a chapter number string, supporting 'last' keyword"""
+            ch_str = ch_str.strip().lower()
+            if ch_str == 'last':
+                return last_chapter
+            return float(ch_str)
+        
         # Parse chapter numbers directly from user input
         requested_chapters = set()
         for part in chapters_str.split(','):
             part = part.strip()
             if '..' in part:
                 start, end = part.split('..')
-                start_num = float(start.strip())
-                end_num = float(end.strip())
+                start_num = parse_chapter_num(start)
+                end_num = parse_chapter_num(end)
                 # For ranges, use what we have in the list or generate the range
                 if all_chapters:
                     for ch in all_chapters:
@@ -443,7 +453,7 @@ if __name__ == "__main__":
                 for ch in range(int(start_num), int(end_num) + 1):
                     requested_chapters.add(float(ch))
             else:
-                requested_chapters.add(float(part.strip()))
+                requested_chapters.add(parse_chapter_num(part))
         
         # Verify each requested chapter exists
         CHAPTERS = []
